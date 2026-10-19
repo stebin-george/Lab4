@@ -2,15 +2,8 @@
 
 import requests
 
+from tvsummary.errors import DownloadError, ResponseError
 from tvsummary.models import Show
-
-
-class DownloadError(Exception):
-    """The show list could not be downloaded."""
-
-
-class ResponseError(Exception):
-    """The server response was not a list of show records."""
 
 
 class TvMazeSource:
@@ -32,7 +25,7 @@ class TvMazeSource:
             response.raise_for_status()
             payload = response.json()
         except requests.RequestException as exc:
-            raise DownloadError(str(exc)) from exc
+            raise DownloadError(f"Could not reach {self.url}.") from exc
 
         if not isinstance(payload, list):
             raise ResponseError("Expected a JSON list of show records.")
