@@ -1,6 +1,7 @@
 """Download failures are tested with a stand-in, not the network."""
 
 import json
+import logging
 
 import pytest
 import requests
@@ -49,6 +50,22 @@ def test_records_that_are_not_objects_are_counted_and_skipped(monkeypatch):
     assert skipped == 1
     assert len(shows) == 1
     assert shows[0].name == "Kept"
+
+
+def test_a_skipped_record_is_logged(monkeypatch, caplog):
+    class FakeResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return ["not a show"]
+
+    monkeypatch.setattr(
+        "tvsummary.sources.requests.get", lambda *args, **kwargs: FakeResponse()
+    )
+    with caplog.at_level(logging.WARNING):
+        TvMazeSource("https://example.invalid", timeout=1).fetch()
+    assert "Skipped a record" in caplog.text
 
 
 def test_write_summary_uses_tmp_path(tmp_path):

@@ -1,5 +1,9 @@
 """Group shows. Each grouping is a subclass of Aggregation."""
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class Aggregation:
     """One grouping of shows.
@@ -50,11 +54,12 @@ class AverageRatingByLanguage(Aggregation):
         totals = {}
         skipped = 0
         for show in shows:
-            if show.language is None:
+            if show.language is None or show.rating is None:
                 skipped += 1
-                continue
-            if show.rating is None:
-                skipped += 1
+                logger.warning(
+                    "Skipped %s while averaging ratings because data was missing",
+                    show.name,
+                )
                 continue
             total, count = totals.get(show.language, (0.0, 0))
             totals[show.language] = (total + show.rating, count + 1)
@@ -79,6 +84,10 @@ class ShowsPremieredPerDecade(Aggregation):
         for show in shows:
             if show.premiere_year is None:
                 skipped += 1
+                logger.warning(
+                    "Skipped %s because the premiere date was missing",
+                    show.name,
+                )
                 continue
             decade = f"{(show.premiere_year // 10) * 10}s"
             counts[decade] = counts.get(decade, 0) + 1

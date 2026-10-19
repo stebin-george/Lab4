@@ -1,6 +1,7 @@
 """Build the summary dictionary and write it to JSON."""
 
 import json
+import logging
 from pathlib import Path
 
 from tvsummary.aggregations import (
@@ -10,6 +11,8 @@ from tvsummary.aggregations import (
     ShowsWithoutBroadcastNetwork,
 )
 from tvsummary.config import SOURCE_URL
+
+logger = logging.getLogger(__name__)
 
 
 def build_summary(shows, skipped_malformed):
@@ -36,3 +39,4 @@ def write_summary(summary, path):
     destination.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(summary, indent=2, ensure_ascii=False) + "\n"
     destination.write_text(text, encoding="utf-8")
+    logger.info("Wrote summary data to %s", destination)
