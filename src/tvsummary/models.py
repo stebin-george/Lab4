@@ -37,9 +37,7 @@ class Show:
         if not isinstance(value, list):
             return frozenset()
         return frozenset(
-            genre.strip()
-            for genre in value
-            if isinstance(genre, str) and genre.strip()
+            genre.strip() for genre in value if isinstance(genre, str) and genre.strip()
         )
 
     @staticmethod
