@@ -57,5 +57,12 @@
       "Prime Video"
     ],
     "shows_with_neither": 0
-  }
+  },
+  "featured_shows": [
+    "black-ish",
+    "The Knick",
+    "Constantine",
+    "New Girl",
+    "Transparent"
+  ]
 }

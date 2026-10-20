@@ -1,12 +1,6 @@
 # TV Maze Show Summary
 
-This package downloads one page of TV shows and summarizes them by genre, language, premiere decade, and broadcast network. The summary is the same one Lab 02 produced. What changed is the structure: records, downloading, grouping, and writing now live in separate modules.
-
-## Data source
-
-https://api.tvmaze.com/shows?page=0
-
-One record is one TV show: name, genres, language, rating, premiere date, and network or web channel. Page 0 returns 240 shows. A show may list several genres or none, a rating may be missing, and a web-only show has no network. `Show` cleans those cases when it is created.
+This package downloads one page of TV shows and summarizes them by genre, language, premiere decade, and broadcast network. A seeded random sample adds a short list of featured shows, so the same settings produce the same list.
 
 ## Setup
 
@@ -20,50 +14,47 @@ pip install -e .
 ## Run
 
 ```bash
-python main.py
+python -m tvsummary.main
+python -m tvsummary.main --config config/tvsummary.toml
 ```
 
-The program writes `data/processed/summary.json`. If the download fails, it prints `Download failed: ...` and exits without a traceback.
-
-## Test
+## Check it
 
 ```bash
-python -m unittest discover -s tests
+python -m ruff format --check .
+python -m ruff check .
+python -m mypy
+python -m pytest
 ```
 
-## Layout
+## Settings
 
-- `main.py` starts the program, prints errors, and connects the other pieces.
-- `src/tvsummary/__init__.py` re-exports the public classes so `from tvsummary import Show` works.
-- `src/tvsummary/config.py` holds the source URL, timeout, and output path, which are the settings that change between runs.
-- `src/tvsummary/models.py` holds `Show`, because cleaning one record is a different job from counting many of them.
-- `src/tvsummary/sources.py` downloads the page. It is separate so it is the only module that imports `requests`.
-- `src/tvsummary/aggregations.py` holds the groupings. They are separate so each one can be run on a list of shows without downloading or writing.
-- `src/tvsummary/report.py` builds the summary dictionary and writes the JSON file.
-- `tests/test_models.py` checks `Show` and two aggregations with hand-made records and no network.
+- `source_url` is the TV Maze page that is downloaded.
+- `timeout` is how many seconds to wait for that download.
+- `output_folder` is where `summary.json` and `run_info.json` are written.
+- `seed` is the random seed used to choose featured shows.
+- `sample_size` is how many featured shows are chosen.
+- `log_level` is how much detail is written to the log.
 
-## What moved where
+## Errors and exit codes
 
-| Lab 02 | Lab 03 |
-| --- | --- |
-| `fetch_records` | `TvMazeSource.fetch` in `sources.py` |
-| `shows_per_genre` | `ShowsPerGenre.compute` in `aggregations.py` |
-| `average_rating_by_language` | `AverageRatingByLanguage.compute` in `aggregations.py` |
-| `shows_premiered_per_decade` | `ShowsPremieredPerDecade.compute` in `aggregations.py` |
-| `_premiere_year` | `Show._premiere_year` in `models.py` |
-| `shows_without_broadcast_network` | `ShowsWithoutBroadcastNetwork.compute` in `aggregations.py` |
-| `build_summary` | `build_summary` in `report.py` |
-| `write_summary` | `write_summary` in `report.py` |
-| `main` | `main` in `main.py` |
+| Error | When it is raised | What the user sees |
+| --- | --- | --- |
+| `DownloadError` | The download fails, times out, or the server returns an HTTP error | `Error: Could not reach ...` |
+| `ResponseError` | The payload is not a list of shows, or fewer than 50 records arrive | `Error: Expected a JSON list of show records.` or `Error: Expected at least 50 shows, received ...` |
+| `SettingsError` | The settings file is missing, unreadable, invalid, or incomplete, the sample is larger than the named shows, or pytest, mypy, or ruff is not installed | `Error: Could not read settings file ...` or `Error: Settings file ... is missing ...` |
+| `OutputError` | The summary or run record cannot be written | `Error: Could not write ...` |
 
-## Design choices
+Exit code 0 means the summary and run record were written. Exit code 1 means one of those errors stopped the run. The program logs the error and prints one line beginning with `Error:` to standard error. It does not print a traceback.
 
-`Show` exists so every missing or malformed value is handled in one place. A missing rating becomes `None`, genres are stored once in a set, and an unreadable premiere date becomes `None`. The aggregations then read those attributes instead of repeating the checks.
+## Reproducing a run
 
-`TvMazeSource` exists only to download. It returns `Show` objects, not raw dictionaries, and turns network or HTTP failures into `DownloadError` so `main.py` can print a message without importing `requests`.
+The seed is `seed` in `config/tvsummary.toml`. `run_info.json`, written next to `summary.json`, records the settings used for that run, the Python version, and the installed versions of pytest, mypy, and ruff. Featured shows are chosen with `random.Random(seed)` from the show names in download order. A classmate gets the same `featured_shows` list with the same settings file and the same page of TV Maze records. The random sample uses the Python standard library, so no extra package is required for that step. If TV Maze changes page 0, the list can change even when the seed stays the same.
 
-`Aggregation` is the base class. It stores the summary key and defines `compute`. `ShowsPerGenre`, `AverageRatingByLanguage`, `ShowsPremieredPerDecade`, and `ShowsWithoutBroadcastNetwork` each override `compute`. `build_summary` keeps those objects in a list and calls `compute` on each one. It never checks which subclass it has. Adding another grouping means writing one new subclass and appending an instance to that list.
+## What the tests cover
+
+The tests check that a show with no genre list or no rating is cleaned rather than counted as a real value, that each aggregation handles hand-made records, that a failed download and a bad payload raise package errors, that a skipped record is logged, that a missing or incomplete settings file raises `SettingsError`, that `main` returns 1 and prints one `Error:` line when the run cannot finish, that the summary can be written to a temporary folder, and that the same seed produces the same featured shows. They do not call the live TV Maze API. A test that needs wifi fails for the wrong reason, so the live download is checked by running the program instead.
 
 ## Known limitations
 
-The package reads only page 0, so the averages describe that page, not every show on TV Maze. Japanese is only four shows, so that average moves if one rating changes. Ratings are TV Maze user scores. The summary does not include show titles.
+The package reads only page 0, so the averages describe that page and not every show on TV Maze. Ratings are TV Maze user scores. The featured list follows the order of that page, which TV Maze can change. The Japanese average is based on only a few shows.
