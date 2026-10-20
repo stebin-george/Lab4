@@ -1,39 +1,37 @@
 """Wire the package together and print success or a download error."""
 
 import sys
+from pathlib import Path
 
 from tvsummary import (
-    DownloadError,
     ResponseError,
     TvMazeSource,
+    TvSummaryError,
     build_summary,
+    load_settings,
     write_summary,
 )
-from tvsummary.config import OUTPUT, SOURCE_URL, TIMEOUT_SECONDS
+from tvsummary.logging_setup import configure_logging
+from tvsummary.report import build_run_info, write_json
 
 
 def main():
     """Download shows, aggregate them, and write the summary."""
     try:
-        shows, skipped = TvMazeSource(SOURCE_URL, TIMEOUT_SECONDS).fetch()
-    except DownloadError as exc:
+        settings = load_settings("config/tvsummary.toml")
+        configure_logging(settings.log_level)
+        shows, skipped = TvMazeSource(settings.source_url, settings.timeout).fetch()
+        received = len(shows) + skipped
+        if received < 50:
+            raise ResponseError(f"Expected at least 50 shows, received {received}.")
+        summary = build_summary(shows, skipped, settings)
+        folder = Path(settings.output_folder)
+        write_summary(summary, folder / "summary.json")
+        write_json(build_run_info(settings), folder / "run_info.json")
+    except TvSummaryError as exc:
         print(f"Download failed: {exc}")
-        print("Check your connection and run the program again.")
         sys.exit(1)
-    except ResponseError as exc:
-        print(f"Download failed: the response could not be used ({exc}).")
-        sys.exit(1)
-
-    if len(shows) + skipped < 50:
-        print(
-            "Download failed: expected at least 50 shows, "
-            f"received {len(shows) + skipped}."
-        )
-        sys.exit(1)
-
-    summary = build_summary(shows, skipped)
-    write_summary(summary, OUTPUT)
-    print(f"Wrote {summary['records_processed']} shows to {OUTPUT}.")
+    print(f"Wrote {summary['records_processed']} shows to {folder / 'summary.json'}.")
 
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@ from tvsummary.aggregations import (
     ShowsPremieredPerDecade,
     ShowsWithoutBroadcastNetwork,
 )
+from tvsummary.config import Settings, load_settings
 from tvsummary.errors import (
     DownloadError,
     OutputError,
@@ -15,7 +16,7 @@ from tvsummary.errors import (
     TvSummaryError,
 )
 from tvsummary.models import Show
-from tvsummary.report import build_summary, write_summary
+from tvsummary.report import build_summary, featured_show_names, write_summary
 from tvsummary.sources import TvMazeSource
 
 __all__ = [
@@ -25,6 +26,7 @@ __all__ = [
     "OutputError",
     "ResponseError",
     "SettingsError",
+    "Settings",
     "Show",
     "TvSummaryError",
     "ShowsPerGenre",
@@ -32,5 +34,7 @@ __all__ = [
     "ShowsWithoutBroadcastNetwork",
     "TvMazeSource",
     "build_summary",
+    "featured_show_names",
+    "load_settings",
     "write_summary",
 ]

@@ -2,9 +2,11 @@
 
 from tvsummary import (
     AverageRatingByLanguage,
+    Show,
     ShowsPerGenre,
     ShowsPremieredPerDecade,
     ShowsWithoutBroadcastNetwork,
+    featured_show_names,
 )
 
 
@@ -39,6 +41,20 @@ def test_premieres_are_grouped_by_decade(show, show_record):
     result = ShowsPremieredPerDecade().compute([show, type(show)(show_record)])
     assert result["counts"] == {"2010s": 1}
     assert result["shows_excluded"] == 1
+
+
+def test_same_seed_gives_the_same_featured_shows(show_record):
+    names = ["Alpha", "Bravo", "Charlie", "Delta", "Echo"]
+    shows = []
+    for name in names:
+        payload = dict(show_record)
+        payload["name"] = name
+        shows.append(Show(payload))
+    first = featured_show_names(shows, seed=5005, sample_size=3)
+    second = featured_show_names(shows, seed=5005, sample_size=3)
+    assert first == second
+    assert len(first) == 3
+    assert set(first) <= set(names)
 
 
 def test_web_only_shows_are_not_given_a_network(show, show_record):
