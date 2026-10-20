@@ -2,6 +2,8 @@
 
 import logging
 
+from tvsummary.models import Show
+
 logger = logging.getLogger(__name__)
 
 
@@ -12,11 +14,11 @@ class Aggregation:
     which subclass they are holding.
     """
 
-    def __init__(self, name):
+    def __init__(self, name: str) -> None:
         """Store the summary key this aggregation fills."""
         self.name = name
 
-    def compute(self, shows):
+    def compute(self, shows: list[Show]) -> dict[str, object]:
         """Return this aggregation's result for the given shows."""
         raise NotImplementedError
 
@@ -24,13 +26,13 @@ class Aggregation:
 class ShowsPerGenre(Aggregation):
     """Count how many shows list each genre."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Name this aggregation shows_per_genre."""
         super().__init__("shows_per_genre")
 
-    def compute(self, shows):
+    def compute(self, shows: list[Show]) -> dict[str, object]:
         """Count each genre once per show, and count shows that have none."""
-        counts = {}
+        counts: dict[str, int] = {}
         without_genre = 0
         for show in shows:
             if not show.genres:
@@ -45,13 +47,13 @@ class ShowsPerGenre(Aggregation):
 class AverageRatingByLanguage(Aggregation):
     """Average the rating of shows that have both a language and a rating."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Name this aggregation average_rating_by_language."""
         super().__init__("average_rating_by_language")
 
-    def compute(self, shows):
+    def compute(self, shows: list[Show]) -> dict[str, object]:
         """Skip missing ratings instead of treating them as zero."""
-        totals = {}
+        totals: dict[str, tuple[float, int]] = {}
         skipped = 0
         for show in shows:
             if show.language is None or show.rating is None:
@@ -73,13 +75,13 @@ class AverageRatingByLanguage(Aggregation):
 class ShowsPremieredPerDecade(Aggregation):
     """Count shows by the decade of their premiere date."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Name this aggregation shows_premiered_per_decade."""
         super().__init__("shows_premiered_per_decade")
 
-    def compute(self, shows):
+    def compute(self, shows: list[Show]) -> dict[str, object]:
         """Leave out shows whose premiere year could not be read."""
-        counts = {}
+        counts: dict[str, int] = {}
         skipped = 0
         for show in shows:
             if show.premiere_year is None:
@@ -97,13 +99,13 @@ class ShowsPremieredPerDecade(Aggregation):
 class ShowsWithoutBroadcastNetwork(Aggregation):
     """Describe shows that have no traditional network."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Name this aggregation shows_without_broadcast_network."""
         super().__init__("shows_without_broadcast_network")
 
-    def compute(self, shows):
+    def compute(self, shows: list[Show]) -> dict[str, object]:
         """Count web-only shows without assigning them a made-up network."""
-        web_channels = set()
+        web_channels: set[str] = set()
         web_only = 0
         missing_both = 0
         for show in shows:

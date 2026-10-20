@@ -11,11 +11,12 @@ from tvsummary.aggregations import (
     ShowsWithoutBroadcastNetwork,
 )
 from tvsummary.config import SOURCE_URL
+from tvsummary.models import Show
 
 logger = logging.getLogger(__name__)
 
 
-def build_summary(shows, skipped_malformed):
+def build_summary(shows: list[Show], skipped_malformed: int) -> dict[str, object]:
     """Combine every aggregation into one dict ready to write."""
     aggregations = [
         ShowsPerGenre(),
@@ -23,7 +24,7 @@ def build_summary(shows, skipped_malformed):
         ShowsPremieredPerDecade(),
         ShowsWithoutBroadcastNetwork(),
     ]
-    summary = {
+    summary: dict[str, object] = {
         "source_url": SOURCE_URL,
         "records_processed": len(shows),
         "records_skipped_malformed": skipped_malformed,
@@ -33,7 +34,7 @@ def build_summary(shows, skipped_malformed):
     return summary
 
 
-def write_summary(summary, path):
+def write_summary(summary: dict[str, object], path: str | Path) -> None:
     """Write the summary to a JSON file."""
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)

@@ -3,7 +3,7 @@
 import logging
 
 
-def configure_logging(level):
+def configure_logging(level: str) -> None:
     """Send log records to the console at the given level."""
     numeric = getattr(logging, str(level).upper(), None)
     if not isinstance(numeric, int):

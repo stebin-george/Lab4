@@ -13,12 +13,12 @@ logger = logging.getLogger(__name__)
 class TvMazeSource:
     """Fetch shows from a TV Maze URL and return Show objects."""
 
-    def __init__(self, url, timeout):
+    def __init__(self, url: str, timeout: float) -> None:
         """Remember where to download from and how long to wait."""
         self.url = url
         self.timeout = timeout
 
-    def fetch(self):
+    def fetch(self) -> tuple[list[Show], int]:
         """Download the page and return shows plus a malformed-record count.
 
         Records that are not dictionaries are counted as malformed and are
@@ -36,7 +36,7 @@ class TvMazeSource:
             raise ResponseError("Expected a JSON list of show records.")
 
         logger.debug("Received %s records", len(payload))
-        shows = []
+        shows: list[Show] = []
         skipped = 0
         for item in payload:
             if not isinstance(item, dict):

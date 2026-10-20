@@ -8,7 +8,15 @@ class Show:
     here so later code can trust the attributes.
     """
 
-    def __init__(self, raw):
+    name: str | None
+    genres: frozenset[str]
+    language: str | None
+    rating: float | None
+    premiere_year: int | None
+    network_name: str | None
+    web_channel: str | None
+
+    def __init__(self, raw: object) -> None:
         """Store a cleaned show from one API object."""
         if not isinstance(raw, dict):
             raise TypeError("A show record must be a dictionary.")
@@ -21,7 +29,7 @@ class Show:
         self.network_name = self._nested_name(raw.get("network"))
         self.web_channel = self._nested_name(raw.get("webChannel"))
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the title and premiere year when the year is known."""
         if isinstance(self.name, str) and self.name.strip():
             title = self.name.strip()
@@ -32,7 +40,7 @@ class Show:
         return f"{title} ({self.premiere_year})"
 
     @staticmethod
-    def _genres(value):
+    def _genres(value: object) -> frozenset[str]:
         """Return the show's genres, with blanks and repeats removed."""
         if not isinstance(value, list):
             return frozenset()
@@ -41,14 +49,14 @@ class Show:
         )
 
     @staticmethod
-    def _language(value):
+    def _language(value: object) -> str | None:
         """Return the language text, or None when it is missing."""
         if not isinstance(value, str) or not value.strip():
             return None
         return value
 
     @staticmethod
-    def _rating(value):
+    def _rating(value: object) -> float | None:
         """Return the average rating, or None when it is missing."""
         average = value.get("average") if isinstance(value, dict) else None
         if isinstance(average, bool) or not isinstance(average, (int, float)):
@@ -56,7 +64,7 @@ class Show:
         return float(average)
 
     @staticmethod
-    def _premiere_year(value):
+    def _premiere_year(value: object) -> int | None:
         """Return a plausible premiere year, or None when the date is unusable."""
         if not isinstance(value, str) or len(value) < 4 or not value[:4].isdigit():
             return None
@@ -66,7 +74,7 @@ class Show:
         return year
 
     @staticmethod
-    def _nested_name(value):
+    def _nested_name(value: object) -> str | None:
         """Return a stripped network or channel name, or None."""
         if not isinstance(value, dict):
             return None
